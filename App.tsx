@@ -49,6 +49,7 @@ const App: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [generatingCharId, setGeneratingCharId] = useState<string | null>(null);
   const [compileError, setCompileError] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
   const userProfileStorageKey = 'memorium-user-profile';
 
   useEffect(() => {
@@ -123,12 +124,14 @@ const App: React.FC = () => {
       const compiled = await compileGameBones(b);
       setCodex(compiled);
       setActiveTab(Tab.CODEX);
+      showToast('Sent to Library');
     } catch (e) {
       const fallback = formatBriefToCodex(b);
       setCodex(fallback);
       setActiveTab(Tab.CODEX);
       const message = e instanceof Error ? e.message : 'AI generation failed; used local formatting.';
       setCompileError(message);
+      showToast('AI generation failed; used local formatting.', 'error');
     } finally {
       setIsProcessing(false);
     }
@@ -147,6 +150,11 @@ const App: React.FC = () => {
       }]);
       setActiveTab(Tab.CODEX);
     } catch (e) { console.error(e); } finally { setIsProcessing(false); }
+  };
+
+  const showToast = (text: string, type: 'success' | 'error' = 'success') => {
+    setToast({ text, type });
+    setTimeout(() => setToast(null), 3000);
   };
 
   const handleRemoveCodexElement = (id: string) => {
@@ -360,6 +368,15 @@ const App: React.FC = () => {
           </div>
         </main>
       </div>
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed top-6 right-6 z-50 px-6 py-4 rounded-3xl shadow-soft border text-sm 
+          ${toast.type === 'success' ? 'bg-emerald-400/10 border-emerald-400/30 text-emerald-300' : 'bg-warm-rose/10 border-warm-rose/30 text-warm-rose'}`}
+        >
+          {toast.text}
+        </div>
+      )}
 
       {/* Mode Toggle - Floating Pill */}
       <div className="fixed bottom-8 right-8 z-40">

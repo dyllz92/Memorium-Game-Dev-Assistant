@@ -2,9 +2,15 @@
 export const config = { runtime: "edge" };
 import OpenAI from "openai";
 
-const openai = new OpenAI({
+// Use Vercel AI Gateway with request-scoped BYOK (Bring Your Own Key)
+// The gateway routes requests to multiple providers and supports your own OpenAI key
+const clientOptions: any = {
   apiKey: process.env.OPENAI_API_KEY!,
-});
+  baseURL: process.env.OPENAI_BASE_URL || "https://ai-gateway.vercel.sh/v1",
+};
+if (process.env.OPENAI_ORG_ID) clientOptions.organization = process.env.OPENAI_ORG_ID;
+const openai = new OpenAI(clientOptions);
+const CHAT_MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
 
 type Action = "chat" | "compile_bones" | "apply_iteration" | "generate_image";
 type ReqBody = { action?: unknown; payload?: unknown };
@@ -176,7 +182,7 @@ export default async function handler(req: Request): Promise<Response> {
 
     try {
       const resp = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo",
+        model: CHAT_MODEL,
         messages: [
           { role: "system" as const, content: system },
           { role: "user" as const, content: user },
@@ -231,7 +237,7 @@ Return JSON only.`;
 
     try {
       const resp = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo",
+        model: CHAT_MODEL,
         messages: [
           { role: "system" as const, content: system },
           { role: "user" as const, content: user },
@@ -300,7 +306,7 @@ Return JSON only.`;
 
     try {
       const resp = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo",
+        model: CHAT_MODEL,
         messages: [
           { role: "system" as const, content: system },
           { role: "user" as const, content: user },

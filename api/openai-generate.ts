@@ -5,10 +5,15 @@ if (!process.env.OPENAI_API_KEY) {
   console.error("OPENAI_API_KEY is not set. Requests will fail.");
 }
 
-const clientOptions: any = { apiKey: process.env.OPENAI_API_KEY! };
-if (process.env.OPENAI_BASE_URL) clientOptions.baseURL = process.env.OPENAI_BASE_URL;
+// Use Vercel AI Gateway with request-scoped BYOK (Bring Your Own Key)
+const clientOptions: any = {
+  apiKey: process.env.OPENAI_API_KEY!,
+  baseURL: process.env.OPENAI_BASE_URL || "https://ai-gateway.vercel.sh/v1",
+};
+if (process.env.OPENAI_ORG_ID) clientOptions.organization = process.env.OPENAI_ORG_ID;
 
 const openai = new OpenAI(clientOptions);
+const CHAT_MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
 
 export default async function handler(req: Request): Promise<Response> {
   if (!process.env.OPENAI_API_KEY) {
@@ -53,7 +58,7 @@ export default async function handler(req: Request): Promise<Response> {
 
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: CHAT_MODEL,
       messages: [
         { role: "user" as const, content: prompt }
       ]
