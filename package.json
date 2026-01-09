@@ -1,8 +1,10 @@
 {
   "name": "memorium-app",
   "version": "1.0.0",
+  "type": "module",
   "scripts": {
     "dev": "vite",
+    "api": "node api-server.mjs",
     "build": "vite build",
     "preview": "vite preview"
   },

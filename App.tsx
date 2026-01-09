@@ -5,7 +5,7 @@ import ChatInterface from './components/ChatInterface';
 import TaskBoard from './components/TaskBoard';
 import StoryVault from './components/StoryVault';
 import CharacterList from './components/CharacterList';
-import ProjectBriefComponent from './components/ProjectBrief';
+import ProjectBriefComponent from './components/ProjectBriefEditor';
 import GameCodexComponent from './components/GameCodex';
 import IterationsManager from './components/IterationsManager';
 import Dashboard from './components/Dashboard';
@@ -237,15 +237,15 @@ const App: React.FC = () => {
         ${sidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'}
       `}>
         <div className="h-24 flex items-center px-8">
-          <div className="flex items-center gap-3">
+          <button onClick={() => { setActiveTab(Tab.DASHBOARD); setSidebarOpen(false); }} className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-warm-blue to-warm-rose flex items-center justify-center shadow-glow">
               <Heart className="w-5 h-5 text-white fill-white/20" />
             </div>
-            <div>
+            <div className="text-left">
                <h1 className="font-heading font-bold text-xl text-white tracking-tight">Memorium</h1>
                <p className="text-xs text-warm-slate">Your Creative Space</p>
             </div>
-          </div>
+          </button>
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden ml-auto text-gray-400 hover:text-white"><X className="w-6 h-6" /></button>
         </div>
 
@@ -271,10 +271,10 @@ const App: React.FC = () => {
       {/* Main Panel */}
       <div className="flex-1 flex flex-col min-w-0 relative">
         <header className="lg:hidden h-20 flex items-center px-6 glass-panel sticky top-0 z-30 justify-between backdrop-blur-xl">
-           <div className="flex items-center gap-3">
+           <button onClick={() => { setActiveTab(Tab.DASHBOARD); setSidebarOpen(false); }} className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer">
              <Heart className="w-6 h-6 text-warm-rose" />
              <span className="font-heading font-bold text-lg text-white">Memorium</span>
-           </div>
+           </button>
            <button onClick={() => setSidebarOpen(true)} className="p-3 text-gray-400 bg-white/5 rounded-full"><Menu className="w-6 h-6" /></button>
         </header>
 

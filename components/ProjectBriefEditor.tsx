@@ -1,26 +1,21 @@
 
 import React, { useState } from 'react';
 import { ProjectBrief } from '../types';
-import { Save, MonitorPlay, Palette, Globe, Zap, Users } from 'lucide-react';
+import { Palette, Globe, Zap, Users } from 'lucide-react';
 
 interface ProjectBriefProps {
   brief: ProjectBrief;
   onUpdateBrief: (brief: ProjectBrief) => void;
 }
 
-const ProjectBrief: React.FC<ProjectBriefProps> = ({ brief, onUpdateBrief }) => {
+const ProjectBriefEditor: React.FC<ProjectBriefProps> = ({ brief, onUpdateBrief }) => {
   const [formData, setFormData] = useState<ProjectBrief>(brief);
-  const [isSaved, setIsSaved] = useState(false);
 
   const handleChange = (field: keyof ProjectBrief, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    setIsSaved(false);
-  };
-
-  const handleSave = () => {
-    onUpdateBrief(formData);
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 3000);
+    const updated = { ...formData, [field]: value };
+    setFormData(updated);
+    // Auto-save on every change so the Synthesize Vision button always has latest data
+    onUpdateBrief(updated);
   };
 
   return (
@@ -32,7 +27,6 @@ const ProjectBrief: React.FC<ProjectBriefProps> = ({ brief, onUpdateBrief }) => 
            <h3 className="text-2xl font-heading font-bold text-white">Core Axioms</h3>
            <p className="text-gray-400 text-sm mt-1">The fundamental truths of your world.</p>
         </div>
-        {isSaved && <span className="text-xs font-bold text-emerald-400 px-4 py-2 bg-emerald-400/10 rounded-full animate-pulse">Changes Saved</span>}
       </div>
 
       <div className="space-y-8">
@@ -108,19 +102,9 @@ const ProjectBrief: React.FC<ProjectBriefProps> = ({ brief, onUpdateBrief }) => 
             />
             </div>
         </div>
-
-        <div className="pt-6 flex justify-end">
-           <button 
-            onClick={handleSave}
-            className="btn-soft flex items-center gap-3 bg-white text-calm-950 hover:bg-gray-100 px-8 py-4 text-base font-bold rounded-full shadow-lg transition-all"
-          >
-            <Save className="w-5 h-5" />
-            Save Changes
-           </button>
-        </div>
       </div>
     </div>
   );
 };
 
-export default ProjectBrief;
+export default ProjectBriefEditor;

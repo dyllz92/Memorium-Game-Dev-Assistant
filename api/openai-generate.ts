@@ -1,10 +1,22 @@
+export const config = { runtime: "edge" };
 import OpenAI from "openai";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
-});
+if (!process.env.OPENAI_API_KEY) {
+  console.error("OPENAI_API_KEY is not set. Requests will fail.");
+}
+
+const clientOptions: any = { apiKey: process.env.OPENAI_API_KEY! };
+if (process.env.OPENAI_BASE_URL) clientOptions.baseURL = process.env.OPENAI_BASE_URL;
+
+const openai = new OpenAI(clientOptions);
 
 export default async function handler(req: Request): Promise<Response> {
+  if (!process.env.OPENAI_API_KEY) {
+    return new Response(JSON.stringify({ error: "Server misconfigured", details: "OPENAI_API_KEY is not set" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
       status: 405,
@@ -40,19 +52,24 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   try {
-    const response = await openai.responses.create({
-      model: "gpt-5-nano",
-      input: prompt
-      // If you later want storage, add store: true
+    const response = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        { role: "user" as const, content: prompt }
+      ]
     });
 
-    return new Response(JSON.stringify({ result: response.output_text ?? "" }), {
+    const text = response.choices[0]?.message?.content ?? "";
+    return new Response(JSON.stringify({ result: text }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("OpenAI error:", error);
-    return new Response(JSON.stringify({ error: "AI generation failed" }), {
+    const details = typeof error?.error?.message === "string" ? error.error.message
+      : typeof error?.message === "string" ? error.message
+      : "Unknown error";
+    return new Response(JSON.stringify({ error: "AI generation failed", details }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });

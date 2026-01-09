@@ -1,4 +1,5 @@
 // /api/generate.ts
+export const config = { runtime: "edge" };
 import OpenAI from "openai";
 
 const openai = new OpenAI({
@@ -13,6 +14,25 @@ const HEADERS = { "Content-Type": "application/json" };
 
 function json(status: number, body: unknown) {
   return new Response(JSON.stringify(body), { status, headers: HEADERS });
+}
+
+function describeError(e: unknown): string {
+  try {
+    if (e && typeof e === "object") {
+      const err: any = e;
+      const msg = typeof err.message === "string" ? err.message : null;
+      const status = typeof err.status === "number" ? err.status : null;
+      const dataMsg = typeof err.response?.data?.error?.message === "string" ? err.response.data.error.message : null;
+      const nested = typeof err.error?.message === "string" ? err.error.message : null;
+      const m = dataMsg || nested || msg;
+      if (m && status) return `status ${status}: ${m}`;
+      if (m) return m;
+      return JSON.stringify(err).slice(0, 300);
+    }
+    return String(e);
+  } catch {
+    return "Unknown error";
+  }
 }
 
 function isRecord(v: unknown): v is Record<string, unknown> {
@@ -134,7 +154,7 @@ export default async function handler(req: Request): Promise<Response> {
       return json(200, { imageUri: `data:image/png;base64,${b64}` });
     } catch (e) {
       console.error("Image error:", e);
-      return json(500, { error: "Image generation failed" });
+      return json(500, { error: "Image generation failed", details: describeError(e) });
     }
   }
 
@@ -155,15 +175,15 @@ export default async function handler(req: Request): Promise<Response> {
     const user = `Create game codex elements from this brief JSON:\n${briefJson}\n\nReturn JSON only.`;
 
     try {
-      const resp = await openai.responses.create({
-        model: "gpt-5-nano",
-        input: [
-          { role: "system", content: system },
-          { role: "user", content: user },
+      const resp = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [
+          { role: "system" as const, content: system },
+          { role: "user" as const, content: user },
         ],
       });
 
-      const raw = (resp.output_text ?? "").trim();
+      const raw = (resp.choices[0]?.message?.content ?? "").trim();
       const jsonText = extractFirstJsonObject(raw) ?? raw;
 
       const parsed = JSON.parse(jsonText);
@@ -174,7 +194,7 @@ export default async function handler(req: Request): Promise<Response> {
       return json(200, { elements: (parsed as any).elements });
     } catch (e) {
       console.error("compile_bones error:", e);
-      return json(500, { error: "AI generation failed" });
+      return json(500, { error: "AI generation failed", details: describeError(e) });
     }
   }
 
@@ -210,15 +230,15 @@ ${changeRequest.trim()}
 Return JSON only.`;
 
     try {
-      const resp = await openai.responses.create({
-        model: "gpt-5-nano",
-        input: [
-          { role: "system", content: system },
-          { role: "user", content: user },
+      const resp = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [
+          { role: "system" as const, content: system },
+          { role: "user" as const, content: user },
         ],
       });
 
-      const raw = (resp.output_text ?? "").trim();
+      const raw = (resp.choices[0]?.message?.content ?? "").trim();
       const jsonText = extractFirstJsonObject(raw) ?? raw;
 
       const parsed = JSON.parse(jsonText);
@@ -229,7 +249,7 @@ Return JSON only.`;
       return json(200, { elements: (parsed as any).elements });
     } catch (e) {
       console.error("apply_iteration error:", e);
-      return json(500, { error: "AI generation failed" });
+      return json(500, { error: "AI generation failed", details: describeError(e) });
     }
   }
 
@@ -279,15 +299,15 @@ ${message.trim()}
 Return JSON only.`;
 
     try {
-      const resp = await openai.responses.create({
-        model: "gpt-5-nano",
-        input: [
-          { role: "system", content: system },
-          { role: "user", content: user },
+      const resp = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [
+          { role: "system" as const, content: system },
+          { role: "user" as const, content: user },
         ],
       });
 
-      const raw = (resp.output_text ?? "").trim();
+      const raw = (resp.choices[0]?.message?.content ?? "").trim();
       const jsonText = extractFirstJsonObject(raw) ?? raw;
 
       try {
@@ -304,7 +324,7 @@ Return JSON only.`;
       }
     } catch (e) {
       console.error("chat error:", e);
-      return json(500, { error: "AI generation failed" });
+      return json(500, { error: "AI generation failed", details: describeError(e) });
     }
   }
 
