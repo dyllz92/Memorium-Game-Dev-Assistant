@@ -86,10 +86,10 @@ function normaliseAspectRatio(ratio: string | null): "1:1" | "3:4" | "4:3" {
   return "3:4";
 }
 
-function aspectRatioToSize(r: "1:1" | "3:4" | "4:3") {
+function aspectRatioToSize(r: "1:1" | "3:4" | "4:3"): { width: 1024 | 1792; height: 1024 | 1792 } {
   if (r === "1:1") return { width: 1024, height: 1024 };
-  if (r === "4:3") return { width: 1792, height: 1024 }; // Corrected for DALL-E 3
-  return { width: 1024, height: 1792 }; // 3:4 - Corrected for DALL-E 3
+  if (r === "4:3") return { width: 1792, height: 1024 }; // DALL-E 3 landscape
+  return { width: 1024, height: 1792 }; // DALL-E 3 portrait (3:4)
 }
 
 const MAX_MESSAGE_CHARS = 6000;
