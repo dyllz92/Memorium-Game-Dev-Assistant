@@ -11,7 +11,7 @@ import IterationsManager from './components/IterationsManager';
 import Dashboard from './components/Dashboard';
 import ReviewLog from './components/ReviewLog';
 import LoginScreen from './components/LoginScreen';
-import { Task, StoryNote, ChatMessage, TaskStatus, Character, ProjectBrief, GameCodex, GameIteration, GameElement, FeedbackNote } from './types';
+import { Task, StoryNote, ChatMessage, TaskStatus, Character, ProjectBrief, GameCodex, GameIteration, GameElement, FeedbackNote, UserProfile } from './types';
 import { sendMessageToGemini, generateImage, compileGameBones, applyIterationChanges } from './services/geminiService';
 
 enum Tab {
@@ -27,7 +27,7 @@ enum Tab {
 }
 
 const App: React.FC = () => {
-  const [user, setUser] = useState<{name: string} | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>(Tab.DASHBOARD); 
   const [reviewMode, setReviewMode] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -48,13 +48,31 @@ const App: React.FC = () => {
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [generatingCharId, setGeneratingCharId] = useState<string | null>(null);
+  const [compileError, setCompileError] = useState<string | null>(null);
+  const userProfileStorageKey = 'memorium-user-profile';
+
+  useEffect(() => {
+    const storedProfile = localStorage.getItem(userProfileStorageKey);
+    if (!storedProfile) return;
+    try {
+      const parsedProfile = JSON.parse(storedProfile) as UserProfile;
+      if (parsedProfile?.name) {
+        setUser(parsedProfile);
+      }
+    } catch (error) {
+      console.warn('Failed to read stored profile.', error);
+    }
+  }, []);
 
   useEffect(() => {
     setSidebarOpen(false);
   }, [activeTab]);
 
-  const handleLogin = (name: string) => {
-    setUser({ name });
+  const handleLogin = (profile: UserProfile, options?: { persist?: boolean }) => {
+    setUser(profile);
+    if (options?.persist) {
+      localStorage.setItem(userProfileStorageKey, JSON.stringify(profile));
+    }
   };
 
   const addFeedback = (targetId: string, targetType: FeedbackNote['targetType'], targetTitle: string, content: string) => {
@@ -69,6 +87,7 @@ const App: React.FC = () => {
   const handleCompileBones = async () => {
     if (!projectBrief.title) return alert("Please give your project a name to begin.");
     setIsProcessing(true);
+    setCompileError(null);
     try {
       const compiled = await compileGameBones(projectBrief);
       setCodex(compiled);
@@ -79,7 +98,11 @@ const App: React.FC = () => {
         codex: compiled
       }]);
       setActiveTab(Tab.CODEX);
-    } catch (e) { console.error(e); } finally { setIsProcessing(false); }
+    } catch (e) {
+      console.error(e);
+      const message = e instanceof Error ? e.message : "We couldn't synthesize your vision right now. Please try again.";
+      setCompileError(message);
+    } finally { setIsProcessing(false); }
   };
 
   const handleApplyIteration = async (changeRequest: string) => {
@@ -266,6 +289,11 @@ const App: React.FC = () => {
                     <p className="text-lg text-gray-300 max-w-2xl mx-auto">Define the soul of your project. Let's build something meaningful together.</p>
                  </div>
                 <ProjectBriefComponent brief={projectBrief} onUpdateBrief={setProjectBrief} />
+                {compileError && (
+                  <div className="rounded-3xl border border-warm-rose/30 bg-warm-rose/10 px-6 py-4 text-sm text-warm-rose">
+                    {compileError}
+                  </div>
+                )}
                 <div className="flex justify-center">
                   <button onClick={handleCompileBones} disabled={isProcessing} className="btn-soft bg-gradient-to-r from-warm-blue to-warm-rose text-white px-10 py-5 rounded-full text-lg font-bold shadow-glow hover:shadow-lg flex items-center gap-3 disabled:opacity-50">
                     {isProcessing ? <RefreshCcw className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}

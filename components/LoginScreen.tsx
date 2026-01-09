@@ -1,9 +1,10 @@
 
 import React, { useState } from 'react';
 import { Heart, Sparkles, ArrowRight, Mail, Lock, User, Chrome } from 'lucide-react';
+import { UserProfile } from '../types';
 
 interface LoginScreenProps {
-  onLogin: (name: string) => void;
+  onLogin: (profile: UserProfile, options?: { persist?: boolean }) => void;
 }
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
@@ -23,7 +24,12 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
       // For registration, use the input name. For login, default to "Traveler" or use username if provided
       // In a real app, we would fetch the user's name from the backend upon login.
       const displayName = isRegistering ? formData.name : (formData.username || "Traveler");
-      onLogin(displayName);
+      const profile: UserProfile = {
+        name: displayName,
+        email: formData.username || undefined,
+        provider: 'local'
+      };
+      onLogin(profile);
       setLoading(false);
     }, 1500);
   };
@@ -31,7 +37,13 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   const handleGoogleLogin = () => {
     setLoading(true);
     setTimeout(() => {
-      onLogin("Google User");
+      const fallbackName = formData.name || formData.username || "Google User";
+      const profile: UserProfile = {
+        name: fallbackName,
+        email: formData.username || undefined,
+        provider: 'google'
+      };
+      onLogin(profile, { persist: true });
       setLoading(false);
     }, 1500);
   };

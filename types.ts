@@ -84,6 +84,12 @@ export interface ChatMessage {
   isThinking?: boolean;
 }
 
+export interface UserProfile {
+  name: string;
+  email?: string;
+  provider: 'local' | 'google';
+}
+
 export interface AppState {
   tasks: Task[];
   storyNotes: StoryNote[];
