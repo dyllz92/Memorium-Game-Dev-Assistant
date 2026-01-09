@@ -1,11 +1,11 @@
 import { GoogleGenAI, FunctionDeclaration, Type, Tool } from "@google/genai";
 
 /**
- * CONFIGURATION: EDGE RUNTIME
- * Uses standard Web API objects (Request, Response) instead of Node.js streams.
+ * CONFIGURATION: NODE RUNTIME
+ * Uses Node.js request/response objects in the Vercel serverless environment.
  */
 export const config = {
-  runtime: 'edge',
+  runtime: 'nodejs',
 };
 
 /**
@@ -106,30 +106,76 @@ function validateInput(text: unknown, fieldName: string = 'Input'): string {
   return text.trim();
 }
 
+type NodeRequest = {
+  method?: string;
+  body?: unknown;
+  on?: (event: string, listener: (chunk: Buffer) => void) => void;
+};
+
+type NodeResponse = {
+  status: (code: number) => NodeResponse;
+  setHeader: (name: string, value: string) => void;
+  end: (body?: string) => void;
+};
+
+async function readJsonBody(req: NodeRequest): Promise<any> {
+  if (req.body !== undefined) {
+    if (typeof req.body === 'string') {
+      return JSON.parse(req.body);
+    }
+    return req.body;
+  }
+
+  if (!req.on) {
+    return {};
+  }
+
+  return new Promise((resolve, reject) => {
+    let data = '';
+    req.on?.('data', (chunk: Buffer) => {
+      data += chunk.toString();
+    });
+    req.on?.('end', () => {
+      if (!data) {
+        resolve({});
+        return;
+      }
+      try {
+        resolve(JSON.parse(data));
+      } catch (error) {
+        reject(error);
+      }
+    });
+    req.on?.('error', reject);
+  });
+}
+
+function sendJson(res: NodeResponse, status: number, payload: any) {
+  res.status(status);
+  res.setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify(payload));
+}
+
 /**
- * Main Request Handler (Standard Web API)
+ * Main Request Handler (Node.js)
  */
-export default async function handler(req: Request) {
+export default async function handler(req: NodeRequest, res: NodeResponse) {
   // 1. HTTP Method Validation
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      status: 405,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    sendJson(res, 405, { error: 'Method not allowed' });
+    return;
   }
 
   // 2. Environment Validation
   if (!ai) {
     console.error("Server Error: GEMINI_API_KEY is not configured.");
-    return new Response(JSON.stringify({ error: 'Service unavailable' }), {
-      status: 503,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    sendJson(res, 503, { error: 'Service unavailable' });
+    return;
   }
 
   try {
     // 3. Payload Validation
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const { action, payload } = body;
 
     if (!payload) {
@@ -154,13 +200,11 @@ export default async function handler(req: Request) {
           imageUri = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
         }
       }
-      return new Response(JSON.stringify({ 
+      sendJson(res, 200, { 
         result: "Image generated successfully",
         imageUri 
-      }), { 
-        status: 200, 
-        headers: { 'Content-Type': 'application/json' } 
       });
+      return;
     }
 
     // Handler: Game Bones (Codex Synthesis)
@@ -208,13 +252,11 @@ export default async function handler(req: Request) {
       
       // The response.text is already a JSON string. We parse it to wrap it in our result structure.
       const data = JSON.parse(response.text || "{}");
-      return new Response(JSON.stringify({
+      sendJson(res, 200, {
         result: "Codex compiled successfully",
         elements: data.elements || []
-      }), { 
-        status: 200, 
-        headers: { 'Content-Type': 'application/json' } 
       });
+      return;
     }
 
     // Handler: Apply Iteration
@@ -254,13 +296,11 @@ export default async function handler(req: Request) {
       });
 
       const data = JSON.parse(response.text || "{}");
-      return new Response(JSON.stringify({
+      sendJson(res, 200, {
         result: "Iteration applied successfully",
         elements: data.elements || []
-      }), { 
-        status: 200, 
-        headers: { 'Content-Type': 'application/json' } 
       });
+      return;
     }
 
     // Handler: Chat (Default)
@@ -317,14 +357,12 @@ export default async function handler(req: Request) {
       }
 
       // Return strictly structured response
-      return new Response(JSON.stringify({ 
+      sendJson(res, 200, { 
         result: responseText, // Primary result string
         text: responseText,   // Backward compatibility
         toolCalls: pendingToolCalls 
-      }), { 
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
       });
+      return;
     }
 
     throw new Error("Unknown action requested");
@@ -336,12 +374,10 @@ export default async function handler(req: Request) {
     // Distinguish between validation errors (400) and server errors (500)
     const status = error.message.includes('Invalid input') || error.message.includes('Missing') ? 400 : 500;
     
-    return new Response(JSON.stringify({ 
+    sendJson(res, status, { 
       error: 'Request could not be processed.',
       details: status === 400 ? error.message : undefined 
-    }), { 
-      status: status,
-      headers: { 'Content-Type': 'application/json' }
     });
+    return;
   }
 }
