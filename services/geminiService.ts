@@ -22,7 +22,8 @@ async function callApi(action: string, payload: any) {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `Server error: ${response.statusText}`);
+      const details = errorData.details ? ` (${errorData.details})` : '';
+      throw new Error(errorData.error ? `${errorData.error}${details}` : `Server error: ${response.statusText}`);
     }
 
     return await response.json();
