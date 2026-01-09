@@ -5,7 +5,7 @@ import { GoogleGenAI, FunctionDeclaration, Type, Tool } from "@google/genai";
  * Uses standard Web API objects (Request, Response) instead of Node.js streams.
  */
 export const config = {
-  runtime: 'edge',
+  runtime: 'nodejs',
 };
 
 /**
