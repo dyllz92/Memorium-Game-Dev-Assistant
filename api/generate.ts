@@ -88,8 +88,8 @@ function normaliseAspectRatio(ratio: string | null): "1:1" | "3:4" | "4:3" {
 
 function aspectRatioToSize(r: "1:1" | "3:4" | "4:3") {
   if (r === "1:1") return { width: 1024, height: 1024 };
-  if (r === "4:3") return { width: 1536, height: 1024 };
-  return { width: 1024, height: 1536 }; // 3:4
+  if (r === "4:3") return { width: 1792, height: 1024 }; // Corrected for DALL-E 3
+  return { width: 1024, height: 1792 }; // 3:4 - Corrected for DALL-E 3
 }
 
 const MAX_MESSAGE_CHARS = 6000;
@@ -149,9 +149,10 @@ export default async function handler(req: Request): Promise<Response> {
 
     try {
       const img = await openai.images.generate({
-        model: "gpt-image-1",
+        model: "dall-e-3",
         prompt: prompt.trim(),
-        size: `${width}x${height}`,
+        size: `${width}x${height}` as "1024x1024" | "1024x1792" | "1792x1024",
+        response_format: "b64_json",
       });
 
       const b64 = img.data?.[0]?.b64_json;
@@ -187,6 +188,7 @@ export default async function handler(req: Request): Promise<Response> {
           { role: "system" as const, content: system },
           { role: "user" as const, content: user },
         ],
+        response_format: { type: "json_object" },
       });
 
       const raw = (resp.choices[0]?.message?.content ?? "").trim();
@@ -242,6 +244,7 @@ Return JSON only.`;
           { role: "system" as const, content: system },
           { role: "user" as const, content: user },
         ],
+        response_format: { type: "json_object" },
       });
 
       const raw = (resp.choices[0]?.message?.content ?? "").trim();
@@ -311,6 +314,7 @@ Return JSON only.`;
           { role: "system" as const, content: system },
           { role: "user" as const, content: user },
         ],
+        response_format: { type: "json_object" },
       });
 
       const raw = (resp.choices[0]?.message?.content ?? "").trim();
