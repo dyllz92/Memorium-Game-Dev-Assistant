@@ -4,11 +4,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
 });
 
-type Action =
-  | "chat"
-  | "compile_bones"
-  | "apply_iteration"
-  | "generate_image";
+type Action = "chat" | "compile_bones" | "apply_iteration" | "generate_image";
 
 type ReqBody = {
   action?: unknown;
@@ -26,7 +22,6 @@ function isRecord(v: unknown): v is Record<string, unknown> {
   return !!v && typeof v === "object" && !Array.isArray(v);
 }
 
-// Hard limits to keep free-tier + abuse risk reasonable
 const MAX_PROMPT_CHARS = 6000;
 const MAX_NOTES_CHARS = 12000;
 
@@ -55,11 +50,9 @@ export default async function handler(req: Request): Promise<Response> {
     return json(400, { error: "Unsupported action" });
   }
 
-  // -------------------------
   // ACTION: chat
   // Expects payload: { prompt: string, system?: string }
   // Returns: { text: string }
-  // -------------------------
   if (action === "chat") {
     if (!isRecord(payload)) return json(400, { error: "Invalid payload" });
 
@@ -92,12 +85,9 @@ export default async function handler(req: Request): Promise<Response> {
     }
   }
 
-  // -------------------------
   // ACTION: compile_bones / apply_iteration
-  // For your app’s “structured output” needs.
   // Expects payload: { notes: string, instructions?: string }
   // Returns: { elements: unknown }
-  // -------------------------
   if (action === "compile_bones" || action === "apply_iteration") {
     if (!isRecord(payload)) return json(400, { error: "Invalid payload" });
 
@@ -114,10 +104,12 @@ export default async function handler(req: Request): Promise<Response> {
       return json(400, { error: "instructions must be a string if provided" });
     }
 
-    // IMPORTANT: We’re returning JSON, so ask the model to respond with JSON only.
-    const system = `You are a game dev assistant. Return strictly valid JSON only.
-Do not include markdown fences. Do not include commentary.
-Your output must be a single JSON object with an "elements" property.`;
+    const system = [
+      "You are a game dev assistant.",
+      "Return strictly valid JSON only.",
+      "Do not include markdown fences.",
+      'Return a single JSON object with an "elements" property.',
+    ].join(" ");
 
     const user = `TASK: ${action}
 NOTES:
@@ -139,7 +131,6 @@ Return JSON like:
 
       const text = response.output_text ?? "";
 
-      // Attempt to parse returned JSON
       try {
         const parsed = JSON.parse(text);
         if (!isRecord(parsed) || !("elements" in parsed)) {
@@ -155,12 +146,8 @@ Return JSON like:
     }
   }
 
-  // -------------------------
   // ACTION: generate_image
-  // NOTE: This depends on what your frontend expects.
-  // If you truly need an image, we can wire the OpenAI Images API,
-  // BUT that may not match your current UI. For now we return a clear error.
-  // -------------------------
+  // Not implemented until you confirm what the frontend expects (data URL vs hosted URL)
   if (action === "generate_image") {
     return json(400, {
       error:
