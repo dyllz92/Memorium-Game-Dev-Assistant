@@ -10,6 +10,7 @@ import GameCodexComponent from './components/GameCodex';
 import IterationsManager from './components/IterationsManager';
 import Dashboard from './components/Dashboard';
 import ReviewLog from './components/ReviewLog';
+import LoginScreen from './components/LoginScreen';
 import { Task, StoryNote, ChatMessage, TaskStatus, Character, ProjectBrief, GameCodex, GameIteration, GameElement, FeedbackNote } from './types';
 import { sendMessageToGemini, generateImage, compileGameBones, applyIterationChanges } from './services/geminiService';
 
@@ -26,6 +27,7 @@ enum Tab {
 }
 
 const App: React.FC = () => {
+  const [user, setUser] = useState<{name: string} | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>(Tab.DASHBOARD); 
   const [reviewMode, setReviewMode] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -50,6 +52,10 @@ const App: React.FC = () => {
   useEffect(() => {
     setSidebarOpen(false);
   }, [activeTab]);
+
+  const handleLogin = (name: string) => {
+    setUser({ name });
+  };
 
   const addFeedback = (targetId: string, targetType: FeedbackNote['targetType'], targetTitle: string, content: string) => {
     const newNote: FeedbackNote = {
@@ -185,6 +191,11 @@ const App: React.FC = () => {
     </button>
   );
 
+  // --- Auth Gate ---
+  if (!user) {
+    return <LoginScreen onLogin={handleLogin} />;
+  }
+
   return (
     <div className="flex h-screen bg-calm-950 text-gray-200 overflow-hidden relative selection:bg-warm-rose/30">
       {/* Ambient Background Glows - Increased visibility for lighter tone */}
@@ -246,7 +257,7 @@ const App: React.FC = () => {
 
         <main className="flex-1 overflow-hidden relative">
           <div className="h-full p-4 md:p-8 lg:p-10 relative z-10 overflow-y-auto overflow-x-hidden scroll-smooth">
-            {activeTab === Tab.DASHBOARD && <Dashboard brief={projectBrief} codex={codex} iterations={iterations} characters={characters} tasks={tasks} notes={storyNotes} onNavigate={(t) => setActiveTab(t as Tab)} />}
+            {activeTab === Tab.DASHBOARD && <Dashboard brief={projectBrief} codex={codex} iterations={iterations} characters={characters} tasks={tasks} notes={storyNotes} onNavigate={(t) => setActiveTab(t as Tab)} userName={user.name} />}
             
             {activeTab === Tab.BRIEF && (
               <div className="max-w-4xl mx-auto space-y-10 pb-24">

@@ -11,9 +11,10 @@ interface DashboardProps {
   tasks: Task[];
   notes: StoryNote[];
   onNavigate: (tab: string) => void;
+  userName: string;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ brief, codex, iterations, characters, tasks, notes, onNavigate }) => {
+const Dashboard: React.FC<DashboardProps> = ({ brief, codex, iterations, characters, tasks, notes, onNavigate, userName }) => {
   const completedTasks = tasks.filter(t => t.status === TaskStatus.DONE).length;
   const progressPercent = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0;
 
@@ -67,7 +68,7 @@ const Dashboard: React.FC<DashboardProps> = ({ brief, codex, iterations, charact
             <Heart className="w-3.5 h-3.5" /> Creative Flow Active
           </div>
           <h2 className="text-5xl md:text-7xl font-heading font-bold text-white mb-6 tracking-tight">
-            {brief.title || "Hello, James."}
+            {brief.title || `Hello, ${userName}.`}
           </h2>
           <p className="text-lg md:text-xl text-gray-300 font-medium leading-relaxed mb-10 max-w-2xl">
             {brief.genre ? `Exploring the ${brief.genre} themes of your story. ` : "Let's begin by defining the soul of your project. "}
