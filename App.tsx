@@ -105,6 +105,35 @@ const App: React.FC = () => {
     } finally { setIsProcessing(false); }
   };
 
+  function formatBriefToCodex(b: ProjectBrief): GameCodex {
+    const elements: GameElement[] = [] as any;
+    if (b.title) elements.push({ type: 'title', title: 'Title', content: b.title });
+    if (b.genre) elements.push({ type: 'genre', title: 'Tone & Genre', content: b.genre });
+    if (b.artStyle) elements.push({ type: 'art', title: 'Aesthetic', content: b.artStyle });
+    if (b.worldSetting) elements.push({ type: 'world', title: 'Setting', content: b.worldSetting });
+    if (b.coreMechanicVisuals) elements.push({ type: 'mechanics', title: 'Core Mechanics', content: b.coreMechanicVisuals });
+    if (b.keyCharacters) elements.push({ type: 'characters', title: 'Key Figures', content: b.keyCharacters });
+    return { elements, lastUpdated: Date.now() } as any;
+  }
+
+  const handleSendBriefToLibrary = async (b: ProjectBrief) => {
+    setIsProcessing(true);
+    setCompileError(null);
+    try {
+      const compiled = await compileGameBones(b);
+      setCodex(compiled);
+      setActiveTab(Tab.CODEX);
+    } catch (e) {
+      const fallback = formatBriefToCodex(b);
+      setCodex(fallback);
+      setActiveTab(Tab.CODEX);
+      const message = e instanceof Error ? e.message : 'AI generation failed; used local formatting.';
+      setCompileError(message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handleApplyIteration = async (changeRequest: string) => {
     setIsProcessing(true);
     try {
@@ -288,7 +317,7 @@ const App: React.FC = () => {
                     <h2 className="text-4xl md:text-5xl font-heading font-bold gradient-text">Project Vision</h2>
                     <p className="text-lg text-gray-300 max-w-2xl mx-auto">Define the soul of your project. Let's build something meaningful together.</p>
                  </div>
-                <ProjectBriefComponent brief={projectBrief} onUpdateBrief={setProjectBrief} />
+                <ProjectBriefComponent brief={projectBrief} onUpdateBrief={setProjectBrief} onSendToLibrary={handleSendBriefToLibrary} />
                 {compileError && (
                   <div className="rounded-3xl border border-warm-rose/30 bg-warm-rose/10 px-6 py-4 text-sm text-warm-rose">
                     {compileError}

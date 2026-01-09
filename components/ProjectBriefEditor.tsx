@@ -6,9 +6,10 @@ import { Palette, Globe, Zap, Users } from 'lucide-react';
 interface ProjectBriefProps {
   brief: ProjectBrief;
   onUpdateBrief: (brief: ProjectBrief) => void;
+  onSendToLibrary?: (brief: ProjectBrief) => void;
 }
 
-const ProjectBriefEditor: React.FC<ProjectBriefProps> = ({ brief, onUpdateBrief }) => {
+const ProjectBriefEditor: React.FC<ProjectBriefProps> = ({ brief, onUpdateBrief, onSendToLibrary }) => {
   const [formData, setFormData] = useState<ProjectBrief>(brief);
 
   const handleChange = (field: keyof ProjectBrief, value: string) => {
@@ -101,6 +102,15 @@ const ProjectBriefEditor: React.FC<ProjectBriefProps> = ({ brief, onUpdateBrief 
                 placeholder="Who are the main players?"
             />
             </div>
+        </div>
+
+        <div className="pt-6 flex justify-end">
+          <button
+            onClick={() => onSendToLibrary?.(formData)}
+            className="btn-soft flex items-center gap-3 bg-gradient-to-r from-warm-blue to-warm-rose text-white px-8 py-4 text-base font-bold rounded-full shadow-glow transition-all"
+          >
+            Send to Library
+          </button>
         </div>
       </div>
     </div>

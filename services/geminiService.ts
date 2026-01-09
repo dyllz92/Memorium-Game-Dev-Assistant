@@ -7,7 +7,9 @@ import { Task, StoryNote, Character, ProjectBrief, GameCodex } from '../types';
  * All AI logic is delegated to the /api/generate endpoint (server-side).
  */
 
-const API_ENDPOINT = '/api/generate';
+// Use production API when running locally via VITE_API_URL
+const API_BASE = import.meta?.env?.VITE_API_URL || '';
+const API_ENDPOINT = `${API_BASE}/api/generate`;
 
 /**
  * Generic fetch wrapper for error handling
